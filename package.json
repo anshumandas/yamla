@@ -1,0 +1,38 @@
+{
+  "name": "yamla",
+  "version": "0.0.1",
+  "description": "bundle large yaml files from directory structure and unbundle to a directory structure",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anshumandas/yamla.git"
+  },
+  "dependencies": {
+    "chalk": "^2.4.2",
+    "commander": "^2.9.0",
+    "fs-extra": "^7.0.1",
+    "glob": "^7.0.0",
+    "js-yaml": "^3.13.1",
+    "lodash": "^4.17.15",
+    "mkdirp": "^0.5.1",
+    "require-dir": "^1.0.0"
+  },
+  "keywords": [
+    "yaml",
+    "bundle",
+    "unbundle",
+    "directory",
+    "folder",
+    "json",
+    "structure"
+  ],
+  "author": "Anshuman Das",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/anshumandas/yamla/issues"
+  },
+  "homepage": "https://github.com/anshumandas/yamla#readme"
+}
