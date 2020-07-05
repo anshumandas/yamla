@@ -1,10 +1,10 @@
 {
   "name": "yamla",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "bundle large yaml files from directory structure and unbundle to a directory structure",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -19,6 +19,9 @@
     "lodash": "^4.17.15",
     "mkdirp": "^0.5.1",
     "require-dir": "^1.0.0"
+  },
+  "devDependencies": {
+    "jest": "^25.2.7"
   },
   "keywords": [
     "yaml",

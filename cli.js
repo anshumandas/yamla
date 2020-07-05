@@ -1,59 +1,55 @@
 #!/usr/bin/env node
 'use strict';
 
-const fs = require('fs-extra');
-const path = require('path');
+const Fs = require('fs-extra');
+const Path = require('path');
 const _ = require('lodash');
-const program = require('commander');
-const chalk = require('chalk');
-
-const api = require('.');
+const Program = require('commander');
+const Chalk = require('chalk');
+const Api = require('.');
 
 function writeAndLog(filename, contents) {
-  fs.writeFileSync(filename, contents);
-  console.log(`Created ${chalk.blue(filename)}`);
+  Fs.writeFileSync(filename, contents);
+  console.log(`Created ${Chalk.blue(filename)}`);
 }
 
-program
+Program
   .command('bundle')
   .description('Bundles a directory into file')
   .option('-o, --outfile <filename>', 'The output file')
   .option('-j, --json', 'Output JSON(Default is YAML)')
   .arguments('[dir]')
   .action(async function(options) {
-    const spec = await api.bundle({ ...options, verbose: true });
-    const str = api.stringify(spec, options);
-
-    if (options.outfile) {
-      fs.writeFileSync(options.outfile, str);
-      console.log('Created "%s" openapi file.', options.outfile);
-    } else {
-      // Write the bundled spec to stdout
-      console.log(str);
+    try{
+      const spec = await api.bundle({ ...options, basedir: dir, verbose: true });
+      const str = Api.stringify(spec, options);
+      options.outfile = options.outfile || dir+(json ? ".json" : ".yaml");
+      if (spec) {
+        writeAndLog(options.outfile, str);
+      }
+    } catch(e) {
+      console.log('Failed');
     }
   });
 
-  program
-    .command('unbundle')
-    .description('Unbundles a file into directory')
-    .option('-o, --outdir <foldername>', 'The output folder')
-    .arguments('[file]')
-    .action(async function(options) {
-      const spec = await api.bundle({ ...options, verbose: true });
-      const str = api.stringify(spec, options);
+Program
+  .command('unbundle')
+  .description('Unbundles a file into directory')
+  .option('-o, --outdir <foldername>', 'The output folder')
+  .arguments('[file]')
+  .action(async function(options) {
+    try {
+      options.outdir = options.outdir || Path.dirname(file);
+      const success = await Api.unbundle({ ...options, basefile: file, verbose: true });
+      console.log('Created folder:', options.outdir);
+    } catch(e) {
+      console.log('Failed');
+    }
+  });
 
-      if (options.outfile) {
-        fs.writeFileSync(options.outfile, str);
-        console.log('Created "%s" openapi file.', options.outfile);
-      } else {
-        // Write the bundled spec to stdout
-        console.log(str);
-      }
-    });
-
-program.version(require('../package').version).parse(process.argv);
+Program.version(require('../package').version).parse(process.argv);
 
 // Show help if no options were given
-if (program.rawArgs.length < 3) {
-  program.help();
+if (Program.rawArgs.length < 3) {
+  Program.help();
 }

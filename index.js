@@ -1,110 +1,44 @@
 'use strict';
 
-const fs = require('fs');
+const Fs = require('fs-extra');
 const Path = require('path');
 
 const _ = require('lodash');
 const YAML = require('js-yaml');
+const Chalk = require('chalk');
+
 const glob = require('glob').sync;
-const chalk = require('chalk');
 const mkdirp = require('mkdirp').sync;
 
-const { pathToFilename, anyYaml, dirExist } = require('./utils');
+const { pathToFilename, anyYaml, dirExist, isDirEmpty, isMultiLineString, baseName, filenameToPath, removeEmptyDirs } = require('./utils');
 
 var routes = {};
 
-function calcPaths(basedir = 'spec/') {
-  return {
-    mainFile: basedir + 'openapi.yaml',
-    pathsDir: basedir + 'paths/',
-    definitionsDir: basedir + 'definitions/',
-    codeSamplesDir: basedir + 'code_samples/',
-    componentsDir: basedir + 'components/',
-    children: findChildren(basedir) //By Anshuman Das
-  };
-}
-
-const OPENAPI3_COMPONENTS = [
-  'schemas',
-  'responses',
-  'parameters',
-  'examples',
-  'headers',
-  'requestBodies',
-  'links',
-  'callbacks',
-  'securitySchemes'
-];
-
-exports.bundle = async function(options = {}) {
-  const { pathsDir, definitionsDir, componentsDir, mainFile, codeSamplesDir } = calcPaths(
-    options.basedir
-  );
-  const spec = readYaml(mainFile);
-
-  if (dirExist(pathsDir)) {
-    if (options.verbose) {
-      console.log('[spec] Adding paths to spec');
-    }
-    if (spec.paths) {
-      throw Error('All paths should be defined inside ' + pathsDir);
-    }
-    spec.paths = globYamlObject(pathsDir, _.flow([baseName, filenameToPath]));
+exports.unbundle = async function(options = {}, avoidFolder, multiLineAsMd) {
+  const inFile = options.baseFile;
+  const outFolder = options.outdir;
+  const mainFile = Path.join(outFolder, baseName(inFile) + '.yaml');
+  if(outFolder && !dirExist(outFolder)) {
+    Fs.mkdirSync(outFolder);
   }
+  let spec = readYaml(inFile);
+  updateGlobObject(outFolder, mainFile, spec, 1, avoidFolder, multiLineAsMd);
+  removeEmptyDirs(outFolder);
+};
 
-  if (spec.openapi) {
-    if (dirExist(componentsDir)) {
-      if (spec.components) {
-        throw Error(`All components should be defined inside ${componentsDir}`);
-      }
-      spec.components = {};
+exports.bundle = async function(options = {}, avoidFolder, multiLineAsMd) {
+  const inDir = options.basedir;
+  const mainFile = Path.join(inDir, baseName(inFile));
+  const spec = globYamlObject(pathsDir, _.flow([baseName, filenameToPath]));
 
-      for (const componentType of OPENAPI3_COMPONENTS) {
-        const compDir = Path.join(componentsDir, componentType);
-        if (!dirExist(compDir)) {
-          continue;
-        }
-        if (options.verbose) {
-          console.log(`[spec] Adding components/${componentType} to spec`);
-        }
-        spec.components[componentType] = globYamlObject(compDir, baseName);
-      }
-    }
-  } else {
-    if (dirExist(definitionsDir)) {
-      if (options.verbose) {
-        console.log('[spec] Adding definitions to spec');
-      }
-      if (spec.definitions) {
-        throw Error('All definitions should be defined inside ' + definitionsDir);
-      }
-      spec.definitions = globYamlObject(definitionsDir, baseName);
-    }
-  }
+  //traverse
 
-  if (!options.skipCodeSamples && dirExist(codeSamplesDir)) {
-    if (options.verbose) {
-      console.log('[spec] Adding code samples to spec');
-    }
-    bundleCodeSample(spec, codeSamplesDir);
-  }
-
-  if (!options.skipHeadersInlining && spec.headers) {
-    if (options.verbose) {
-      console.log('[spec] Inlining headers referencess');
-    }
-    inlineHeaders(spec);
-  }
-
-  if (!options.skipPlugins) {
-    await runPlugins(spec, options);
-  }
-
+  // spec.paths = globYamlObject(pathsDir, _.flow([baseName, filenameToPath]));
   return spec;
 };
 
 exports.stringify = function(spec, options = {}) {
-  if (options.yaml) {
+  if (!options.json) {
     return YAML.safeDump(spec, { indent: 2, lineWidth: -1, noRefs: true, skipInvalid: true });
   }
 
@@ -118,14 +52,6 @@ exports.parse = function(string) {
     throw new Error('Can not parse OpenAPI file ' + e.message);
   }
 };
-
-function baseName(path) {
-  return Path.parse(path).name;
-}
-
-function filenameToPath(filename) {
-  return '/' + filename.replace(/@/g, '/');
-}
 
 function globObject(dir, pattern, objectPathCb) {
   return _.reduce(
@@ -147,24 +73,62 @@ function globYamlObject(dir, objectPathCb) {
   return _.mapValues(globObject(dir, anyYaml, objectPathCb), readYaml);
 }
 
-function updateGlobObject(dir, object) {
-  const knownKeys = globObject(dir, anyYaml, baseName);
+function canBeUnbundled(value, key, dir, level, multiLineAsMd) {
+  // let l = ['paths', 'components', 'parameters', 'responses', 'schemas', 'securitySchemas'];
+  // return l.includes(key) || l.includes(baseName(dir));
+  return _.isObject(value) || (isMultiLineString(value) && multiLineAsMd);
+}
 
+function saveMd(file, object) {
+  mkdirp(Path.dirname(file));
+  return Fs.writeFileSync(file, object);
+}
+
+function updateGlobObject(dir, fname, object, level, avoidFolder, multiLineAsMd = true) {
+  let ret = false;
+  const knownKeys = globObject(dir, anyYaml, baseName);
   _.each(object, function(value, key) {
-    let filename = Path.join(dir, key + '.yaml');
-    if (key in knownKeys) {
-      filename = knownKeys[key];
-      delete knownKeys[key];
+    if (value && canBeUnbundled(value, key, dir, level, multiLineAsMd)) {
+      if(avoidFolder == null || !avoidFolder(value, key, dir, level)) {
+        if(isMultiLineString(value)) {
+          saveMd(Path.join(dir, key + '.md'), value);
+          delete object[key];
+        } else {
+          let varDir = Path.join(dir, ""+key);
+
+          const vars = (_.isArray(value)) ? value : _.mapKeys(value, function(_value, p) {
+            return pathToFilename(p);
+          });
+          mkdirp(dir);
+          if(updateGlobObject(varDir, Path.join(varDir, '_.yaml'), vars, level + 1, avoidFolder, multiLineAsMd)) {
+            delete object[key];
+          }
+        }
+      } else {
+        let filename = Path.join(dir, key + '.yaml');
+        if (key in knownKeys) {
+          filename = knownKeys[key];
+          delete knownKeys[key];
+        }
+        updateYaml(filename, value);
+        delete object[key];
+      }
     }
-    updateYaml(filename, value);
   });
+
+  if(!isDirEmpty(dir)) {
+    ret = true;
+    if(_.keys(object).length > 0) updateYaml(fname, object);
+  }
 
   _(knownKeys)
     .values()
-    .each(fs.unlinkSync);
+    .each(Fs.unlinkSync);
+  return ret;
 }
 
 function updateYaml(file, newData) {
+  if(_.isArray(newData)) console.log(newData);
   let currentData;
   try {
     currentData = readYaml(file, true);
@@ -179,17 +143,18 @@ function updateYaml(file, newData) {
 
 function readYaml(file, silent) {
   try {
-    return YAML.safeLoad(fs.readFileSync(file, 'utf-8'), { filename: file });
+    return YAML.safeLoad(Fs.readFileSync(file, 'utf-8'), { filename: file });
   } catch (e) {
     if (!silent) {
-      console.log(chalk.red(e.message));
+      console.log(Chalk.red(e.message));
     }
   }
 }
+exports.readYaml = readYaml;
 
 function readYamlOrDefault(fileName, defaultVal, defaultMessage) {
   try {
-    return YAML.safeLoad(fs.readFileSync(fileName, 'utf-8'), { filename: fileName });
+    return YAML.safeLoad(Fs.readFileSync(fileName, 'utf-8'), { filename: fileName });
   } catch (e) {
     if (e.code === 'ENOENT') {
       console.warn(defaultMessage);
@@ -202,5 +167,5 @@ function readYamlOrDefault(fileName, defaultVal, defaultMessage) {
 
 function saveYaml(file, object) {
   mkdirp(Path.dirname(file));
-  return fs.writeFileSync(file, YAML.safeDump(object, { noRefs: true, skipInvalid: true }));
+  return Fs.writeFileSync(file, YAML.safeDump(object, { noRefs: true, skipInvalid: true }));
 }
