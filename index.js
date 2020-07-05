@@ -14,7 +14,7 @@ const { pathToFilename, anyYaml, dirExist, isDirEmpty, isMultiLineString, baseNa
 
 var routes = {};
 
-exports.unbundle = async function(options = {}, avoidFolder, multiLineAsMd) {
+exports.unbundle = async function(options = {}, avoidFolder, multiLineAsMd, allowUnbundle) {
   const inFile = options.baseFile;
   const outFolder = options.outdir;
   const mainFile = Path.join(outFolder, baseName(inFile) + '.yaml');
@@ -22,11 +22,11 @@ exports.unbundle = async function(options = {}, avoidFolder, multiLineAsMd) {
     Fs.mkdirSync(outFolder);
   }
   let spec = readYaml(inFile);
-  updateGlobObject(outFolder, mainFile, spec, 1, avoidFolder, multiLineAsMd);
+  updateGlobObject(outFolder, mainFile, spec, 1, avoidFolder, multiLineAsMd, allowUnbundle);
   removeEmptyDirs(outFolder);
 };
 
-exports.bundle = async function(options = {}, avoidFolder, multiLineAsMd) {
+exports.bundle = async function(options = {}) {
   const inDir = options.basedir;
   const mainFile = Path.join(inDir, baseName(inFile));
   const spec = globYamlObject(pathsDir, _.flow([baseName, filenameToPath]));
@@ -73,10 +73,8 @@ function globYamlObject(dir, objectPathCb) {
   return _.mapValues(globObject(dir, anyYaml, objectPathCb), readYaml);
 }
 
-function canBeUnbundled(value, key, dir, level, multiLineAsMd) {
-  // let l = ['paths', 'components', 'parameters', 'responses', 'schemas', 'securitySchemas'];
-  // return l.includes(key) || l.includes(baseName(dir));
-  return _.isObject(value) || (isMultiLineString(value) && multiLineAsMd);
+function canBeUnbundled(value, key, dir, level, multiLineAsMd, allowUnbundle) {
+  return (allowUnbundle && allowUnbundle(value, key, dir, level, multiLineAsMd)) || (!allowUnbundle && _.isObject(value) || (isMultiLineString(value) && multiLineAsMd));
 }
 
 function saveMd(file, object) {
@@ -84,11 +82,11 @@ function saveMd(file, object) {
   return Fs.writeFileSync(file, object);
 }
 
-function updateGlobObject(dir, fname, object, level, avoidFolder, multiLineAsMd = true) {
+function updateGlobObject(dir, fname, object, level, avoidFolder, multiLineAsMd = true, allowUnbundle) {
   let ret = false;
   const knownKeys = globObject(dir, anyYaml, baseName);
   _.each(object, function(value, key) {
-    if (value && canBeUnbundled(value, key, dir, level, multiLineAsMd)) {
+    if (value && canBeUnbundled(value, key, dir, level, multiLineAsMd, allowUnbundle)) {
       if(avoidFolder == null || !avoidFolder(value, key, dir, level)) {
         if(isMultiLineString(value)) {
           saveMd(Path.join(dir, key + '.md'), value);
@@ -100,7 +98,7 @@ function updateGlobObject(dir, fname, object, level, avoidFolder, multiLineAsMd 
             return pathToFilename(p);
           });
           mkdirp(dir);
-          if(updateGlobObject(varDir, Path.join(varDir, '_.yaml'), vars, level + 1, avoidFolder, multiLineAsMd)) {
+          if(updateGlobObject(varDir, Path.join(varDir, '_.yaml'), vars, level + 1, avoidFolder, multiLineAsMd, allowUnbundle)) {
             delete object[key];
           }
         }
@@ -128,7 +126,6 @@ function updateGlobObject(dir, fname, object, level, avoidFolder, multiLineAsMd 
 }
 
 function updateYaml(file, newData) {
-  if(_.isArray(newData)) console.log(newData);
   let currentData;
   try {
     currentData = readYaml(file, true);
