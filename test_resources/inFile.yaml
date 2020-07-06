@@ -1,4 +1,7 @@
 openapi: 3.0.1
+description: |
+  This is a sample multiline at first level
+  this should create an md file
 info:
   title: Swagger Petstore
   description: |

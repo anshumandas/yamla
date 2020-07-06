@@ -1,5 +1,5 @@
 # yamla
-WIP: bundle large yaml files from directory structure and unbundle to a directory structure
+YAML Aggregator that bundles large yaml files from directory structure and unbundle to a directory structure
 
 ## Problem
 YAML is a great format that is both machine readable and easy for human comprehension.

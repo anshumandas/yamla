@@ -5,14 +5,17 @@ const _ = require('lodash');
 const glob = require('glob').sync;
 
 exports.pathToFilename = function(path) {
-  let ret = path
-    .replace(/~1/g, '/')
-    .replace(/~0/g, '~')
-    .replace(/\//g, '@');
-  return ret.startsWith('@') ? ret.substring(1) : ret;
+  let ret = path.replace(/\//g, '@');
+  return ret;
 };
 
-exports.anyYaml = '**/*.yaml';
+exports.filenameToPath = function(filename) {
+  return filename.replace(/@/g, '/');
+}
+
+exports.anyYamlOrMd = '*.{yaml,md}';
+exports.any_Yaml = '_*.yaml';
+exports.anyYaml = '*.yaml';
 
 exports.getAllYamls = function(dir) {
   return _.fromPairs(
@@ -48,10 +51,6 @@ exports.isMultiLineString = function(value) {
 
 exports.baseName = function(path) {
   return Path.parse(path).name;
-}
-
-exports.filenameToPath = function(filename) {
-  return '/' + filename.replace(/@/g, '/');
 }
 
 exports.removeEmptyDirs = function(dir) {

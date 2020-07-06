@@ -10,14 +10,14 @@ const Chalk = require('chalk');
 const glob = require('glob').sync;
 const mkdirp = require('mkdirp').sync;
 
-const { pathToFilename, anyYaml, dirExist, isDirEmpty, isMultiLineString, baseName, filenameToPath, removeEmptyDirs } = require('./utils');
+const { pathToFilename, any_Yaml, anyYamlOrMd, dirExist, isDirEmpty, isMultiLineString, baseName, filenameToPath, removeEmptyDirs } = require('./utils');
 
 var routes = {};
 
 exports.unbundle = async function(options = {}, avoidFolder, multiLineAsMd, allowUnbundle) {
   const inFile = options.baseFile;
   const outFolder = options.outdir;
-  const mainFile = Path.join(outFolder, baseName(inFile) + '.yaml');
+  const mainFile = Path.join(outFolder, '_' + baseName(inFile) + '.yaml');
   if(outFolder && !dirExist(outFolder)) {
     Fs.mkdirSync(outFolder);
   }
@@ -26,14 +26,10 @@ exports.unbundle = async function(options = {}, avoidFolder, multiLineAsMd, allo
   removeEmptyDirs(outFolder);
 };
 
-exports.bundle = async function(options = {}) {
+exports.bundle = async function(options = {}, handleFiles = readYaml) {
   const inDir = options.basedir;
-  const mainFile = Path.join(inDir, baseName(inFile));
-  const spec = globYamlObject(pathsDir, _.flow([baseName, filenameToPath]));
-
-  //traverse
-
-  // spec.paths = globYamlObject(pathsDir, _.flow([baseName, filenameToPath]));
+  let main = _.keys(globObject(inDir, any_Yaml, baseName))[0];
+  const spec = globYamlObject(inDir, _.flow([baseName, filenameToPath]), main, handleFiles);
   return spec;
 };
 
@@ -54,7 +50,7 @@ exports.parse = function(string) {
 };
 
 function globObject(dir, pattern, objectPathCb) {
-  return _.reduce(
+  let ret = _.reduce(
     glob(Path.join(dir, pattern)),
     function(result, path) {
       const objPath = objectPathCb(path.substring(dir.length));
@@ -67,10 +63,48 @@ function globObject(dir, pattern, objectPathCb) {
     },
     {}
   );
+  return ret;
 }
 
-function globYamlObject(dir, objectPathCb) {
-  return _.mapValues(globObject(dir, anyYaml, objectPathCb), readYaml);
+function ifArray(ret) {
+  let ret2 = _.reduce(
+    ret,
+    function(result, value, key) {
+      if(!isNaN(key)) {
+        result.push(value);
+      }
+      return result;
+    },
+    []
+  );
+  let a = _.remove(_.keys(ret), function(n) {
+      return n != '_';
+    });
+  return ret2.length == a.length ? ret2 : ret;
+}
+
+function globYamlObject(dir, objectPathCb, main, handleFiles) {
+  let ret = {};
+  Fs
+   .readdirSync(dir)
+   .forEach((file) => {
+     let path = Path.join(dir, file);
+     if(Fs.statSync(path).isDirectory()) {
+       ret[file] = globYamlObject(path, objectPathCb, '_', handleFiles);
+     }
+   });
+  let rest = _.mapValues(globObject(dir, anyYamlOrMd, objectPathCb), handleFiles);
+  let _yaml = rest[main];
+  delete rest[main];
+  _.merge(ret, rest);
+  _.merge(ret, _yaml);
+
+  ret = ifArray(ret);
+  return ret;
+}
+
+function map(obj, fn) {
+  return _.isArray(obj) ? _.map(obj, fn) : _.mapValues(obj, fn);
 }
 
 function canBeUnbundled(value, key, dir, level, multiLineAsMd, allowUnbundle) {
@@ -84,7 +118,7 @@ function saveMd(file, object) {
 
 function updateGlobObject(dir, fname, object, level, avoidFolder, multiLineAsMd = true, allowUnbundle) {
   let ret = false;
-  const knownKeys = globObject(dir, anyYaml, baseName);
+  const knownKeys = globObject(dir, anyYamlOrMd, baseName);
   _.each(object, function(value, key) {
     if (value && canBeUnbundled(value, key, dir, level, multiLineAsMd, allowUnbundle)) {
       if(avoidFolder == null || !avoidFolder(value, key, dir, level)) {
@@ -94,7 +128,7 @@ function updateGlobObject(dir, fname, object, level, avoidFolder, multiLineAsMd 
         } else {
           let varDir = Path.join(dir, ""+key);
 
-          const vars = (_.isArray(value)) ? value : _.mapKeys(value, function(_value, p) {
+          const vars = _.mapKeys(value, function(_value, p) {
             return pathToFilename(p);
           });
           mkdirp(dir);
@@ -139,12 +173,16 @@ function updateYaml(file, newData) {
 }
 
 function readYaml(file, silent) {
-  try {
-    return YAML.safeLoad(Fs.readFileSync(file, 'utf-8'), { filename: file });
-  } catch (e) {
-    if (!silent) {
-      console.log(Chalk.red(e.message));
+  if(file.endsWith('.yaml')) {
+    try {
+      return YAML.safeLoad(Fs.readFileSync(file, 'utf-8'), { filename: file });
+    } catch (e) {
+      if (!silent) {
+        console.log(Chalk.red(e.message));
+      }
     }
+  } else {
+    return Fs.readFileSync(file, {encoding:'utf8', flag:'r'});
   }
 }
 exports.readYaml = readYaml;
