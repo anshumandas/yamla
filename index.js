@@ -15,7 +15,7 @@ const { pathToFilename, any_Yaml, anyYamlOrMd, dirExist, isDirEmpty, isMultiLine
 var routes = {};
 
 exports.unbundle = async function(options = {}, avoidFolder, multiLineAsMd, allowUnbundle) {
-  const inFile = options.baseFile;
+  const inFile = options.basefile;
   const outFolder = options.outdir;
   const mainFile = Path.join(outFolder, '_' + baseName(inFile) + '.yaml');
   if(outFolder && !dirExist(outFolder)) {

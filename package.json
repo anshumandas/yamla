@@ -1,9 +1,14 @@
 {
   "name": "yamla",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "bundle large yaml files from directory structure and unbundle to a directory structure",
   "main": "index.js",
+  "bin": {
+    "yamla": "./cli.js"
+  },
   "scripts": {
+    "bundle": "yamla bundle",
+    "unbundle": "yamla unbundle",
     "test": "jest"
   },
   "repository": {
