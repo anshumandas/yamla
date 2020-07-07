@@ -1,3 +1,20 @@
+/*
+* Copyright 2020 YAMLA Contributors (https://github.com/anshumandas/yamla)
+* Copyright 2020 
+*
+* Licensed under the MIT, Version 1 (the "License");
+* A copy of the license is present in the root directory of the project in file LICENSE
+* You may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://opensource.org/licenses/MIT
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 const Yamla = require('yamla');
 const Fs = require('fs-extra');
 const Path = require('path');

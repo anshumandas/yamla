@@ -9,7 +9,8 @@
   "scripts": {
     "bundle": "yamla bundle",
     "unbundle": "yamla unbundle",
-    "test": "jest"
+    "test": "jest",
+    "stamp": "node -e 'require(`license-stamper`).run()' '.' '.' 'license_config.yaml'"
   },
   "repository": {
     "type": "git",
@@ -26,7 +27,8 @@
     "require-dir": "^1.0.0"
   },
   "devDependencies": {
-    "jest": "^25.2.7"
+    "jest": "^25.2.7",
+    "license-stamper": "file:../license-stamper"
   },
   "keywords": [
     "yaml",

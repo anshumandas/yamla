@@ -1,10 +1,27 @@
+/*
+* Copyright 2020 YAMLA Contributors (https://github.com/anshumandas/yamla)
+* Copyright 2020 
+*
+* Licensed under the MIT, Version 1 (the "License");
+* A copy of the license is present in the root directory of the project in file LICENSE
+* You may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     https://opensource.org/licenses/MIT
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 'use strict';
 
 const Fs = require('fs-extra');
 const Path = require('path');
 
 const _ = require('lodash');
-const YAML = require('js-yaml');
+const Yaml = require('js-yaml');
 const Chalk = require('chalk');
 
 const glob = require('glob').sync;
@@ -35,7 +52,7 @@ exports.bundle = async function(options = {}, handleFiles = readYaml) {
 
 exports.stringify = function(spec, options = {}) {
   if (!options.json) {
-    return YAML.safeDump(spec, { indent: 2, lineWidth: -1, noRefs: true, skipInvalid: true });
+    return Yaml.safeDump(spec, { indent: 2, lineWidth: -1, noRefs: true, skipInvalid: true });
   }
 
   return JSON.stringify(spec, null, 2) + '\n';
@@ -43,7 +60,7 @@ exports.stringify = function(spec, options = {}) {
 
 exports.parse = function(string) {
   try {
-    return YAML.safeLoad(string, { json: true });
+    return Yaml.safeLoad(string, { json: true });
   } catch (e) {
     throw new Error('Can not parse OpenAPI file ' + e.message);
   }
@@ -173,23 +190,23 @@ function updateYaml(file, newData) {
 }
 
 function readYaml(file, silent) {
-  if(file.endsWith('.yaml')) {
-    try {
-      return YAML.safeLoad(Fs.readFileSync(file, 'utf-8'), { filename: file });
-    } catch (e) {
-      if (!silent) {
-        console.log(Chalk.red(e.message));
-      }
+  try {
+    if(file.endsWith('.yaml')) {
+        return Yaml.safeLoad(Fs.readFileSync(file, 'utf-8'), { filename: file });
+    } else {
+      return Fs.readFileSync(file, {encoding:'utf8', flag:'r'});
     }
-  } else {
-    return Fs.readFileSync(file, {encoding:'utf8', flag:'r'});
+  } catch (e) {
+    if (!silent) {
+      console.log(Chalk.red(e.message));
+    }
   }
 }
 exports.readYaml = readYaml;
 
 function readYamlOrDefault(fileName, defaultVal, defaultMessage) {
   try {
-    return YAML.safeLoad(Fs.readFileSync(fileName, 'utf-8'), { filename: fileName });
+    return Yaml.safeLoad(Fs.readFileSync(fileName, 'utf-8'), { filename: fileName });
   } catch (e) {
     if (e.code === 'ENOENT') {
       console.warn(defaultMessage);
@@ -202,5 +219,5 @@ function readYamlOrDefault(fileName, defaultVal, defaultMessage) {
 
 function saveYaml(file, object) {
   mkdirp(Path.dirname(file));
-  return Fs.writeFileSync(file, YAML.safeDump(object, { noRefs: true, skipInvalid: true }));
+  return Fs.writeFileSync(file, Yaml.safeDump(object, { noRefs: true, skipInvalid: true }));
 }
