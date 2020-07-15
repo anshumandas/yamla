@@ -1,6 +1,6 @@
 {
   "name": "yamla",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "bundle large yaml files from directory structure and unbundle to a directory structure",
   "main": "index.js",
   "bin": {
@@ -28,7 +28,7 @@
   },
   "devDependencies": {
     "jest": "^25.2.7",
-    "license-stamper": "file:../license-stamper"
+    "license-stamper": "^1.0.1"
   },
   "keywords": [
     "yaml",

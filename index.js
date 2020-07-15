@@ -1,6 +1,6 @@
 /*
 * Copyright 2020 YAMLA Contributors (https://github.com/anshumandas/yamla)
-* Copyright 2020 
+* Copyright 2020
 *
 * Licensed under the MIT, Version 1 (the "License");
 * A copy of the license is present in the root directory of the project in file LICENSE
@@ -113,8 +113,8 @@ function globYamlObject(dir, objectPathCb, main, handleFiles) {
   let rest = _.mapValues(globObject(dir, anyYamlOrMd, objectPathCb), handleFiles);
   let _yaml = rest[main];
   delete rest[main];
-  _.merge(ret, rest);
-  _.merge(ret, _yaml);
+  ret = _.merge(ret, rest);
+  ret = _.merge(ret, _yaml);
 
   ret = ifArray(ret);
   return ret;

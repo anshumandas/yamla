@@ -1,6 +1,6 @@
 /*
 * Copyright 2020 YAMLA Contributors (https://github.com/anshumandas/yamla)
-* Copyright 2020 
+* Copyright 2020
 *
 * Licensed under the MIT, Version 1 (the "License");
 * A copy of the license is present in the root directory of the project in file LICENSE
@@ -44,7 +44,7 @@ describe('test unbudle and bundle with avoidFolder1', () => {
   Fs.removeSync(outFolder);
   it('unbundle', async () => {
     let multiLineAsMd = true;
-    await Yamla.unbundle({baseFile:inFile, outdir:outFolder}, avoidFolder1, multiLineAsMd);
+    await Yamla.unbundle({basefile:inFile, outdir:outFolder}, avoidFolder1, multiLineAsMd);
     expect(Fs.existsSync(Path.join(outFolder, '_inFile.yaml'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components', 'schemas'))).toBe(true);
@@ -64,7 +64,7 @@ describe('test unbudle and bundle with avoidFolder1b', () => {
   Fs.removeSync(outFolder);
   it('unbundle', async () => {
     let multiLineAsMd = true;
-    await Yamla.unbundle({baseFile:inFile, outdir:outFolder}, avoidFolder1b, multiLineAsMd);
+    await Yamla.unbundle({basefile:inFile, outdir:outFolder}, avoidFolder1b, multiLineAsMd);
     expect(Fs.existsSync(Path.join(outFolder, '_inFile.yaml'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components', 'schemas'))).toBe(true);
@@ -84,7 +84,7 @@ describe('test unbudle and bundle with avoidFolder2', () => {
   Fs.removeSync(outFolder);
   it('unbundle', async () => {
     let multiLineAsMd = true;
-    await Yamla.unbundle({baseFile:inFile, outdir:outFolder}, avoidFolder2, multiLineAsMd);
+    await Yamla.unbundle({basefile:inFile, outdir:outFolder}, avoidFolder2, multiLineAsMd);
     expect(Fs.existsSync(Path.join(outFolder, '_inFile.yaml'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components', 'schemas'))).toBe(true);
@@ -105,7 +105,7 @@ describe('test unbudle and bundle with avoidFolder2 with an allow logic', () => 
   Fs.removeSync(outFolder);
   it('unbundle', async () => {
     let multiLineAsMd = true;
-    await Yamla.unbundle({baseFile:inFile, outdir:outFolder}, avoidFolder1, multiLineAsMd, canBeUnbundled);
+    await Yamla.unbundle({basefile:inFile, outdir:outFolder}, avoidFolder1, multiLineAsMd, canBeUnbundled);
     expect(Fs.existsSync(Path.join(outFolder, '_inFile.yaml'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components', 'schemas'))).toBe(true);
@@ -126,7 +126,7 @@ describe('test unbudle and bundle with avoidFolder2 with an allow logic and no m
   Fs.removeSync(outFolder);
   it('unbundle', async () => {
     let multiLineAsMd = false;
-    await Yamla.unbundle({baseFile:inFile, outdir:outFolder}, avoidFolder1, multiLineAsMd, canBeUnbundled);
+    await Yamla.unbundle({basefile:inFile, outdir:outFolder}, avoidFolder1, multiLineAsMd, canBeUnbundled);
     expect(Fs.existsSync(Path.join(outFolder, '_inFile.yaml'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components'))).toBe(true);
     expect(Fs.existsSync(Path.join(outFolder, 'components', 'schemas'))).toBe(true);
