@@ -1,6 +1,6 @@
 {
   "name": "yamla",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "bundle large yaml files from directory structure and unbundle to a directory structure",
   "main": "index.js",
   "bin": {
@@ -22,7 +22,7 @@
     "fs-extra": "^7.0.1",
     "glob": "^7.0.0",
     "js-yaml": "^3.13.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "mkdirp": "^0.5.1",
     "require-dir": "^1.0.0"
   },
